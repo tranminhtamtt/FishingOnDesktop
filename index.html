@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Aquarium Overlay</title>
+    <style>
+        :root {
+            --sea-lvl-1: url('assets/bien-1.png');
+            --sea-lvl-2: url('assets/bien-2.png');
+            --sea-lvl-3: url('assets/bien-3.png');
+            --sea-lvl-4: url('assets/bien-4.png');
+            --dock-bg: url('assets/vach-da.png');
+            --fisherman-src: url('assets/fisherman.png');
+        }
+
+        /* --- CSS CATCH OVERLAY V3 --- */
+        #catch-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999999;
+            pointer-events: auto;
+            /* Cho phép click vào overlay để bấm nút X */
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: rgba(0, 0, 0, 0.9);
+            transition: background 1s ease;
+        }
+
+        /* Nút Tắt (X) chuyên nghiệp */
+        #catch-close {
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            font-size: 30px;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #catch-close:hover {
+            color: #e74c3c;
+            border-color: #e74c3c;
+            transform: scale(1.1) rotate(90deg);
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        /* --- PHA NÍN THỞ (SUSPENSE) --- */
+        #catch-suspense {
+            position: absolute;
+            z-index: 10;
+            font-size: 35px;
+            font-weight: 900;
+            color: white;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            pointer-events: none;
+            /* Không cản click */
+        }
+
+        /* --- PHA VỠ ÒA (CONTENT) --- */
+        #catch-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 5;
+            position: relative;
+            /* Để nút X bám theo */
+        }
+
+        #catch-title {
+            font-size: 26px;
+            color: white;
+            margin-bottom: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        #catch-emoji {
+            filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.6));
+        }
+
+        #catch-tier {
+            margin-top: 25px;
+            font-size: 55px;
+            font-weight: bolder;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        /* Tia sáng & Flash */
+        #catch-rays {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200vmax;
+            height: 200vmax;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #catch-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        /* --- HIỆU ỨNG HẠT (PARTICLES) --- */
+        #catch-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 3;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* --- KEYFRAMES GACHA --- */
+        @keyframes suspenseShake {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            25% {
+                transform: translate(-3px, 3px) scale(1.05);
+            }
+
+            50% {
+                transform: translate(3px, -3px) scale(1.05);
+            }
+
+            75% {
+                transform: translate(-3px, -3px) scale(1.1);
+            }
+        }
+
+        @keyframes gachaRevealFish {
+            0% {
+                transform: scale(0.1) translateY(150px) rotate(-20deg);
+                opacity: 0;
+                filter: brightness(2) blur(10px);
+            }
+
+            40% {
+                transform: scale(1.4) translateY(-30px) rotate(10deg);
+                opacity: 1;
+                filter: brightness(1.5) blur(0px);
+            }
+
+            70% {
+                transform: scale(0.95) translateY(10px) rotate(-5deg);
+                filter: brightness(1);
+            }
+
+            100% {
+                transform: scale(1) translateY(0) rotate(0deg);
+                filter: brightness(1);
+            }
+        }
+
+        @keyframes pulseTierText {
+
+            0%,
+            100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 15px currentColor);
+            }
+
+            50% {
+                transform: scale(1.1);
+                filter: drop-shadow(0 0 35px currentColor);
+            }
+        }
+
+        @keyframes spinRaysVortex {
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        @keyframes flashBangEffect {
+            0% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes screenQuake {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            10%,
+            30%,
+            50%,
+            70%,
+            90% {
+                transform: translate(-15px, 10px);
+            }
+
+            20%,
+            40%,
+            60%,
+            80% {
+                transform: translate(15px, -10px);
+            }
+        }
+
+        @keyframes intenseQuake {
+            0%,
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            10%,
+            30%,
+            50%,
+            70%,
+            90% {
+                transform: translate(-30px, 20px) rotate(-3deg);
+            }
+            20%,
+            40%,
+            60%,
+            80% {
+                transform: translate(30px, -20px) rotate(3deg);
+            }
+        }
+
+        @keyframes legendaryFishReveal {
+            0% {
+                transform: scale(0) translateY(-500px) rotate(720deg);
+                opacity: 0;
+                filter: brightness(5) drop-shadow(0 0 100px #fff);
+            }
+            40% {
+                transform: scale(2) translateY(50px) rotate(-10deg);
+                opacity: 1;
+                filter: brightness(3) drop-shadow(0 0 100px #f1c40f);
+            }
+            70% {
+                transform: scale(0.8) translateY(-20px) rotate(5deg);
+                filter: brightness(2) drop-shadow(0 0 50px #f1c40f);
+            }
+            100% {
+                transform: scale(1) translateY(0) rotate(0deg);
+                filter: brightness(1) drop-shadow(0 0 30px #f1c40f);
+            }
+        }
+
+        @keyframes pulseLegendaryText {
+            0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 20px currentColor) drop-shadow(0 0 40px #fff);
+            }
+            50% {
+                transform: scale(1.2);
+                filter: drop-shadow(0 0 40px currentColor) drop-shadow(0 0 80px currentColor);
+                color: #fff;
+            }
+        }
+
+        @keyframes particleExplode {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* --- BACKGROUND LAYER --- */
+        .bg-common {
+            background: radial-gradient(circle, rgba(40, 40, 40, 0.9) 0%, rgba(0, 0, 0, 0.95) 100%);
+        }
+
+        .bg-rare {
+            background: radial-gradient(circle, rgba(41, 128, 185, 0.4) 0%, rgba(0, 0, 0, 0.95) 100%);
+        }
+
+        .bg-epic {
+            background: radial-gradient(circle, rgba(142, 68, 173, 0.5) 0%, rgba(0, 0, 0, 0.95) 100%);
+        }
+
+        .bg-mythic {
+            background: radial-gradient(circle, rgba(192, 57, 43, 0.6) 0%, rgba(0, 0, 0, 0.95) 100%);
+        }
+
+        .bg-legendary {
+            background: radial-gradient(circle, rgba(241, 196, 15, 0.6) 0%, rgba(0, 0, 0, 0.95) 100%);
+        }
+
+        /* Reset & Base Overlay Settings */
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            /* Hide scrollbars */
+            background: transparent;
+            /* Must be transparent for overlay */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Disable text selection by default */
+            user-select: none;
+        }
+
+        /* Vùng chứa Canvas cho cá (nổi lên trên desktop) */
+        #aquarium-container {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Vùng nước câu cá: Các vòng cung gợn sóng */
+        #water-area {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .water-ring {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border-top-left-radius: 100%;
+            /* Tốc độ chậm lại gấp đôi (1.5s) và đường cong Animation siêu mềm để chống giật */
+            transition: all 1.5s cubic-bezier(0.2, 1, 0.4, 1);
+            box-shadow: -2px -2px 10px rgba(0, 0, 0, 0.1) inset;
+            will-change: width, height;
+            /* Tối ưu sức mạnh Card đồ họa (GPU) chống rớt khung hình */
+        }
+
+        /* Compact Mode (Thu nhỏ) */
+        .water-ring {
+            width: 120px;
+            height: 120px;
+            opacity: 0;
+        }
+
+        /* ===== NƠI BẠN SỬA ẢNH BIỂN CÂU THEO LEVEL 1-4 ===== */
+        /* Thay vì dùng màu rgba, bạn có thể xóa chữ `background: rgba(...)` 
+       rồi dùng: `background: url('assets/song-cap-1.png') no-repeat; background-size: cover;` */
+        /* Lớp 1 (Nhỏ nhất - Vùng nước nông): Khi bấm dấu + lần 1 */
+        #water-area.level-1 .ring-1,
+        #water-area.level-2 .ring-1,
+        #water-area.level-3 .ring-1,
+        #water-area.level-4 .ring-1 {
+            width: 300px;
+            height: 300px;
+            opacity: 1;
+            background: var(--sea-lvl-1) no-repeat bottom right;
+            background-size: cover;
+        }
+
+        /* Lớp 2 (Bình thường - Bãi San Hô): Khi bấm dấu + lần 2 */
+        #water-area.level-2 .ring-2,
+        #water-area.level-3 .ring-2,
+        #water-area.level-4 .ring-2 {
+            width: 500px;
+            height: 500px;
+            opacity: 1;
+            background: var(--sea-lvl-2) no-repeat bottom right;
+            background-size: cover;
+        }
+
+        /* Lớp 3 (To - Vùng nước sâu): Khi bấm dấu + lần 3 */
+        #water-area.level-3 .ring-3,
+        #water-area.level-4 .ring-3 {
+            width: 700px;
+            height: 700px;
+            opacity: 1;
+            background: var(--sea-lvl-3) no-repeat bottom right;
+            background-size: cover;
+        }
+
+        /* Lớp 4 (Cực to - Rãnh đáy đại dương thẳm): Khi bấm dấu + lần 4 */
+        #water-area.level-4 .ring-4 {
+            width: 900px;
+            height: 900px;
+            opacity: 1;
+            background: var(--sea-lvl-4) no-repeat bottom right;
+            background-size: cover;
+        }
+
+        /* Vùng nền xanh cực nhạt khi có cấp độ lớn hơn 0 - ĐÃ ĐƯỢC XÓA ĐỂ TRONG SUỐT HOÀN TOÀN */
+        #water-area[class^="level-"] {
+            background: transparent;
+            pointer-events: auto;
+            /* Bật chế độ Fishing Mode, chặn xuyên click để ngắm rọi mồi! */
+        }
+
+        /* Các phần tử UI (có thể tương tác) */
+        .interactive-ui {
+            pointer-events: auto;
+            /* Cho phép nhận click */
+        }
+
+        /* Góc người ngồi câu cá (Fishing Dock) ở dưới phải */
+        /* ===== NƠI BẠN SỬA VỰC ĐÁ NGỒI ===== */
+        #fishing-dock {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            /* Đặt tỉ lệ khung chuẩn 16:9 (240x135) khớp hoàn hảo với ảnh đá của sếp */
+            width: 240px;
+            height: 135px;
+            background-image: var(--dock-bg);
+            /* Crop triệt để dải trong suốt thừa ở mép phải và mép đáy do ảnh gốc tải trên mạng */
+            background-size: 115% 115%;
+            background-position: right -25px bottom -12px;
+            background-repeat: no-repeat;
+            /* Đã tắt nền xanh mặc định để hiển thị trọn vẹn vách đá */
+            /* background: rgba(44, 62, 80, 0.8); */
+            /* border-top-left-radius: 100%; */
+            /* border-top: 4px solid #f1c40f; */
+            /* border-left: 4px solid #f1c40f; */
+            /* box-shadow: -5px -5px 15px rgba(0,0,0,0.5); */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            /* Đã tắt box-shadow để không bị hiện hình vuông bóng mờ phía sau ảnh */
+            /* box-shadow: -4px -4px 10px rgba(0,0,0,0.3); */
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* Đã xóa hiệu ứng hover làm hỏng ảnh vách đá */
+
+        /* Xếp 2 nút cộng trừ nằm ngang ở giữa mảng đá, lách qua khe hẹp giữa Nút Shop và Ông Tiên Cá */
+        #btn-expand {
+            position: absolute;
+            bottom: 25px;
+            right: 110px;
+            /* Cách ô ông tiên cá 90px */
+        }
+
+        #btn-shrink {
+            position: absolute;
+            bottom: 25px;
+            right: 145px;
+        }
+
+        #dock-icon {
+            /* Nhân vật SVG tự vẽ / Thay bằng ảnh AI */
+            position: absolute;
+            bottom: 40px; /* Bù lại vị trí khi thu nhỏ */
+            right: 55px; /* Dịch sang trái một chút để giữ trọng tâm */
+            width: 160px;
+            height: 160px;
+            z-index: 2;
+            pointer-events: none;
+            /* Tránh cản trở click nút bãi đất */
+        }
+
+        .dock-controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+        }
+
+        .dock-btn {
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            background: rgba(44, 62, 80, 0.9);
+            border: 1px solid #f1c40f;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .dock-btn:hover {
+            transform: scale(1.3);
+            color: #f1c40f;
+        }
+
+        /* Nút mở Shop: Dạng tròn nằm trên vách đá */
+        #shop-btn {
+            position: absolute;
+            bottom: 190px; /* Nâng lên trên đầu người câu */
+            right: 25px; 
+            width: 40px;
+            height: 40px;
+            z-index: 20;
+            background: rgba(52, 73, 94, 0.9);
+            color: white;
+            border: 2px solid #f1c40f;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+            font-size: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #shop-btn:hover {
+            background: rgba(44, 62, 80, 1);
+            transform: scale(1.1);
+        }
+
+        #focus-btn {
+            position: absolute;
+            bottom: 240px; /* Nâng lên trên nút lều */
+            right: 25px; 
+            width: 40px;
+            height: 40px;
+            z-index: 20;
+            background: rgba(52, 73, 94, 0.9);
+            color: white;
+            border: 2px solid #e74c3c;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+            font-size: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #focus-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Sidebar Shop: Nâng cấp kích thước và hiệu ứng */
+        #shop-sidebar {
+            position: absolute;
+            bottom: 165px;
+            right: -450px;
+            /* Ẩn xa hơn vì chiều rộng mới to hơn */
+            width: 380px;
+            /* To ra đáng kể */
+            height: 550px;
+            /* Cao hơn để chứa nhiều nội dung */
+            background: linear-gradient(135deg, rgba(30, 39, 46, 0.98), rgba(47, 53, 66, 0.98));
+            border: 2px solid #f1c40f;
+            border-radius: 20px;
+            z-index: 15;
+            transition: right 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: -10px 10px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        #shop-sidebar.expanded {
+            right: 30px;
+        }
+
+        /* Khu vực hiển thị Số dư tiền */
+        #currency-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 15px;
+            border-radius: 10px;
+            color: #f1c40f;
+            font-weight: bold;
+            font-size: 1.4rem;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid rgba(241, 196, 15, 0.3);
+        }
+
+        /* Các món hàng và vật phẩm trong kho */
+        .shop-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s;
+        }
+
+        /* Nút Bán cá */
+        .btn-sell {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .btn-sell:hover {
+            background: #2ecc71;
+        }
+
+        /* --- STYLES CHO TABS TRONG SIDEBAR --- */
+        .sidebar-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #bdc3c7;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #f1c40f;
+            color: #2c3e50;
+            border-color: #f1c40f;
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        .setting-group {
+            margin-bottom: 15px;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .setting-group label {
+            display: block;
+            color: #f1c40f;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .setting-group select {
+            width: 100%;
+            background: rgba(44, 62, 80, 0.9);
+            color: white;
+            border: 1px solid #7f8fa6;
+            padding: 8px;
+            border-radius: 6px;
+            outline: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Lớp nước hiển thị như các vòng cung -->
+    <div id="water-area">
+        <div class="water-ring ring-4"></div>
+        <div class="water-ring ring-3"></div>
+        <div class="water-ring ring-2"></div>
+        <div class="water-ring ring-1"></div>
+    </div>
+
+    <!-- CATCH OVERLAY (Chiến Tích) -->
+    <div id="catch-overlay">
+        <div id="catch-rays"></div>
+        <div id="catch-particles"></div>
+        <div id="catch-flash"></div>
+
+        <div id="catch-suspense">🎣 CẦN ĐANG CONG...</div>
+
+        <div id="catch-content" style="display: none;">
+            <div id="catch-close" title="Đóng">✖</div>
+
+            <div id="catch-title">BẮT ĐƯỢC RỒI!</div>
+            <div id="catch-emoji">🐟</div>
+            <div id="catch-tier">LEGENDARY</div>
+        </div>
+    </div>
+
+
+
+    <!-- Removed duplicate floating focus-btn -->
+
+    <!-- Nơi đồ họa PixiJS sẽ vẽ cá -->
+    <div id="aquarium-container"></div>
+
+    <!-- Góc người câu cá (Interactive) -->
+    <div id="fishing-dock" class="interactive-ui">
+        <div id="dock-icon">
+            <!-- ===== NƠI BẠN SỬA ẢNH NGƯỜI CÂU ===== -->
+            <img id="fisherman-img" src="assets/fisherman.png"
+                style="width: 100%; height: 100%; object-fit: contain; pointer-events: none;"
+                alt="Ngư dân">
+        </div>
+        <span id="btn-shrink" class="dock-btn" title="Thu nhỏ">➖</span>
+        <span id="btn-expand" class="dock-btn" title="Phóng to">➕</span>
+    </div>
+
+    <!-- Nút mở Shop tách biệt (Dạng icon tròn) -->
+    <div id="shop-btn" class="interactive-ui" title="Mở Menu Tùy Chỉnh">🏕️</div>
+
+    <!-- Nút Focus Bắt Phím Phụ trợ (Xuyên Chuột) -->
+    <div id="focus-btn" class="interactive-ui" title="Màu Đỏ: Bắt Phím Chơi Game | Màu Xanh: Xuyên Chuột">🔴</div>
+
+    <!-- Sidebar Shop (Interactive) -->
+    <div id="shop-sidebar" class="interactive-ui">
+        
+        <div class="sidebar-tabs">
+            <button class="tab-btn active" data-tab="tab-shop">🛒 CỬA HÀNG</button>
+            <button class="tab-btn" data-tab="tab-settings">⚙️ CÀI ĐẶT</button>
+        </div>
+
+        <!-- TAB CỬA HÀNG -->
+        <div id="tab-shop" class="tab-content active">
+            <div id="currency-display">
+                💰 <span id="user-gold">0</span> <small style="font-size: 0.7rem;">GOLD</small>
+            </div>
+
+            <div style="font-weight: bold; margin-bottom: 10px; color: #7f8fa6; font-size: 0.8rem; text-transform: uppercase;">
+                Vật phẩm</div>
+            <div class="shop-item">
+                <span>🧪 Thức ăn cá</span>
+                <span>5 🪙</span>
+            </div>
+
+            <div style="font-weight: bold; margin: 15px 0 10px 0; color: #7f8fa6; font-size: 0.8rem; text-transform: uppercase;">
+                Giỏ cá của bạn</div>
+            <div id="inventory-list" style="flex-grow: 1; overflow-y: auto; padding-right: 5px;">
+                <span style="font-size: 0.8rem; color: #7f8fa6;">(Giỏ cá đang trống)</span>
+            </div>
+
+            <div style="margin-top: 15px; font-size: 0.75rem; color: #a4b0be; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                Mẹo: Cá hiếm bán được nhiều tiền hơn!
+            </div>
+        </div>
+
+        <!-- TAB CÀI ĐẶT -->
+        <div id="tab-settings" class="tab-content">
+            <div class="setting-group">
+                <label>Người Câu Cá:</label>
+                <select id="sel-fisherman">
+                    <option value="1">Nhân vật Mặc định</option>
+                    <option value="2">Nhân vật Phong cách 2</option>
+                    <option value="3">Nhân vật Phong cách 3</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label>Vách Đá (Chân đế):</label>
+                <select id="sel-dock">
+                    <option value="1">Vách Đá Mặc định</option>
+                    <option value="2">Vách Đá Phong cách 2</option>
+                    <option value="3">Vách Đá Phong cách 3</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label>Môi Trường Biển:</label>
+                <select id="sel-sea">
+                    <option value="1">Biển Mặc định</option>
+                    <option value="2">Biển Phong cách 2</option>
+                    <option value="3">Biển Phong cách 3</option>
+                </select>
+            </div>
+            <div style="margin-top: 15px; font-size: 0.75rem; color: #a4b0be; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                Tên file ảnh yêu cầu trong thư mục /assets:<br>
+                - <b>Nhân vật:</b> fisherman.png, fisherman2.png, fisherman3.png<br>
+                - <b>Vách đá:</b> vach-da.png, vach-da2.png, vach-da3.png<br>
+                - <b>Biển:</b> bien-1.png... | bien-t2-1.png... | bien-t3-1.png...
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+
+</html>

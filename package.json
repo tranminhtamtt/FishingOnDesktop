@@ -1,0 +1,44 @@
+{
+  "name": "crypto-fishing-game",
+  "version": "1.0.0",
+  "description": "A crypto fishing mini-game.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.cryptofishing.app",
+    "productName": "Crypto Fishing",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "assets/**/*",
+      "main.js",
+      "boids.js",
+      "index.html",
+      "renderer.js",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "keywords": [],
+  "author": "Your Name",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.15.1",
+    "pixi.js": "^8.18.1"
+  },
+  "devDependencies": {
+    "electron": "^41.2.1",
+    "electron-builder": "^24.13.3"
+  }
+}
